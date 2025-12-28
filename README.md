@@ -12,11 +12,14 @@ A robust, production-grade Machine Learning pipeline designed to clean, impute, 
 ## 🧠 Key Innovations
 
 ### 1. Hybrid Imputation Engine
+
 Instead of simple mean/mode filling, this system uses a two-tier recovery strategy:
+
 - **Tier 1 (Deterministic Logic):** Uses mathematical derivation (`Price * Qty = Total`) to recover financial gaps with 100% precision.
 - **Tier 2 (Behavioral Clustering):** Uses **K-Means Clustering** to group transactions by behavior (Price, Time, Item) and imputes missing `Location` or `Payment Method` based on the specific cluster's mode.
 
 ### 2. Production Architecture
+
 - **Zero-Dependency Ingestion:** Data is embedded or loaded dynamically with strict type enforcement.
 - **Modular Design:** Separation of concerns (Ingestion $\to$ Preprocessing $\to$ Feature Engineering $\to$ Modeling).
 - **Structured Logging:** Full system traceability compatible with enterprise monitoring tools.
@@ -42,17 +45,20 @@ Instead of simple mean/mode filling, this system uses a two-tier recovery strate
 ## 🚀 Quick Start
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/cafe-analytics-system.git
    cd cafe-analytics-system
    ```
 
 2. **Install dependencies:**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 3. **Run the pipeline:**
+
    ```bash
    python main.py
    ```
@@ -69,7 +75,9 @@ Instead of simple mean/mode filling, this system uses a two-tier recovery strate
 ```
 
 ## 📈 Model Performance
+
 The system evaluates models using **RMSE** and **R² Score**. Random Forest Regressor typically achieves:
+
 - **R² Score:** > 0.90
 - **RMSE:** < 0.30
 

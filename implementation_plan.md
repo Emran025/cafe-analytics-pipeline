@@ -11,6 +11,7 @@
 ## 🎯 Core Objective
 
 Build a **zero-dependency-injection**, **fail-safe** ML pipeline that:
+
 1. Ingests dirty transactional data with embedded CSV data source
 2. Applies a **Two-Tier Hybrid Imputation Strategy**:
    - **Tier 1:** Deterministic mathematical recovery (vectorized operations)
@@ -24,7 +25,8 @@ Build a **zero-dependency-injection**, **fail-safe** ML pipeline that:
 ## 📐 Technical Architecture
 
 ### Repository Structure
-```
+
+```bash
 Project_Root/
 │   implementation_plan.md    # This document
 │   main.py                   # Entry point with production logging
@@ -51,6 +53,7 @@ Project_Root/
 **Responsibility:** Load embedded CSV data, sanitize placeholders, enforce strict typing
 
 **Key Methods:**
+
 - `load_data() -> pd.DataFrame`
   - **Data Source:** Embedded CSV string (10,000 rows) using `io.StringIO`
   - **Sanitization:** Replace `["ERROR", "UNKNOWN", ""]` → `np.nan`
@@ -62,6 +65,7 @@ Project_Root/
   - Returns missing value counts by column
   
 **Quality Standards:**
+
 - ✅ Fully type-hinted (`-> pd.DataFrame`)
 - ✅ Google-style docstrings
 - ✅ Exception handling for malformed data
@@ -75,9 +79,11 @@ Project_Root/
 **Responsibility:** Two-tier missing value recovery with mathematical and ML-based strategies
 
 #### Tier 1: Deterministic Mathematical Recovery
+
 **Method:** `calculate_missing_financials(df: pd.DataFrame) -> pd.DataFrame`
 
 **Logic:**
+
 ```python
 # Vectorized financial relationships (no loops)
 Total = Quantity × Price
@@ -88,6 +94,7 @@ Quantity = Total ÷ Price (if Price ≠ 0)
 **Method:** `lookup_item_prices(df: pd.DataFrame) -> pd.DataFrame`
 
 **Logic:**
+
 ```python
 # Dictionary-based lookup (O(1) complexity)
 Item → Mode(Price)  # Forward mapping
@@ -95,15 +102,18 @@ Price → Mode(Item)  # Reverse mapping
 ```
 
 #### Tier 2: Context-Aware Clustering Imputation
+
 **Method:** `cluster_impute(df: pd.DataFrame) -> pd.DataFrame`
 
 **Strategy:**
+
 1. **Feature Engineering for Clustering:**
    - Encode `Item` → LabelEncoder
    - Convert `Date` → Unix timestamp
    - Normalize `[Price, Total, Date, Item_Encoded]` with MinMaxScaler
 
 2. **KMeans Clustering:**
+
    ```python
    kmeans = KMeans(n_clusters=5, random_state=42)
    cluster_labels = kmeans.fit_predict(normalized_features)
@@ -113,13 +123,15 @@ Price → Mode(Item)  # Reverse mapping
    - For each cluster `c`:
      - `Payment Method[missing in c] = Mode(Payment Method in c)`
      - `Location[missing in c] = Mode(Location in c)`
-   
+
 **Why Clustering?**  
 Unlike global mode imputation, clustering preserves **local patterns**. Example:
+
 - Cluster 0: High-value transactions → Corporate payment methods
 - Cluster 3: Low-value transactions → Cash-dominant locations
 
 **Quality Standards:**
+
 - ✅ No data leakage (clusters built on complete rows only)
 - ✅ Graceful fallback to global mode if cluster mode fails
 - ✅ Final row drop only for irrecoverable cases
@@ -132,7 +144,9 @@ Unlike global mode imputation, clustering preserves **local patterns**. Example:
 **Responsibility:** Temporal decomposition + categorical encoding
 
 **Methods:**
+
 - `extract_date_features(df: pd.DataFrame) -> pd.DataFrame`
+
   ```python
   Month = Transaction Date.month
   DayOfWeek = Transaction Date.dayofweek (0=Monday)
@@ -156,6 +170,7 @@ Unlike global mode imputation, clustering preserves **local patterns**. Example:
 **Responsibility:** Model training, evaluation, performance reporting
 
 **Architecture:**
+
 ```python
 models = {
     "LinearRegression": LinearRegression(),
@@ -164,6 +179,7 @@ models = {
 ```
 
 **Methods:**
+
 - `split_data(df, target='Total Spent') -> Tuple[X_train, X_test, y_train, y_test]`
   - 80/20 stratified split with `random_state=42`
 
@@ -184,7 +200,8 @@ models = {
 **Responsibility:** Production-grade pipeline execution with structured logging
 
 **Logging Format:**
-```
+
+```log
 [2025-12-28 04:31:15] [INFO] [src.ingestion] Reading source dataset.
 [2025-12-28 04:31:16] [INFO] [src.preprocessor] Step A: Deterministic Imputation started.
 [2025-12-28 04:31:18] [INFO] [src.model_trainer] Training RandomForest.
@@ -192,6 +209,7 @@ models = {
 ```
 
 **Pipeline Flow:**
+
 ```python
 main()
 ├── DataLoader.load_data()
@@ -212,12 +230,14 @@ main()
 ## ✅ Acceptance Criteria
 
 ### Functional Requirements
+
 1. **Zero Nulls:** `df.isnull().sum().sum() == 0` after preprocessing
 2. **Logic Integrity:** Financial math relationships must hold (e.g., `Total = Qty × Price`)
 3. **Cluster Validation:** Missing categoricals filled using cluster-specific modes
 4. **Model Performance:** R² > 0.85 for Random Forest
 
 ### Non-Functional Requirements
+
 1. **Type Safety:** All functions use Python 3.10+ type hints
 2. **Documentation:** Google-style docstrings for all classes/methods
 3. **Error Handling:** Try-except blocks for I/O and division operations
@@ -229,6 +249,7 @@ main()
 ## 🎓 Architectural Decisions
 
 ### Why Clustering for Imputation?
+
 **Traditional Approach:** Global mode imputation  
 **Problem:** Ignores contextual patterns (e.g., "Takeaway" locations might prefer "Digital Wallet")
 
@@ -236,7 +257,8 @@ main()
 **Benefit:** Captures hidden relationships between transaction attributes
 
 **Example:**
-```
+
+```txt
 Cluster 2 (High-value In-store transactions):
   - Mode(Payment Method) = "Credit Card"
   - Mode(Location) = "In-store"
@@ -247,6 +269,7 @@ Cluster 4 (Low-value Takeaway transactions):
 ```
 
 ### Why Embedded CSV Data?
+
 **Rationale:** Eliminates external file dependency for demonstration/testing purposes  
 **Implementation:** 10,000 rows stored as Python string, loaded via `io.StringIO(csv_string)`
 
@@ -255,17 +278,20 @@ Cluster 4 (Low-value Takeaway transactions):
 ## 🚀 Execution Guidelines
 
 **Prerequisites:**
+
 ```bash
 pip install -r requirements.txt
 ```
 
 **Run Pipeline:**
+
 ```bash
 python main.py
 ```
 
 **Expected Output:**
-```
+
+```bash
 === Model Performance Report ===
 | Model             | RMSE  | MAE   | R2_Score |
 |-------------------|-------|-------|----------|

@@ -41,7 +41,6 @@ class RegressorSuite:
         }
         
         self.results: Dict[str, Dict[str, float]] = {}
-    
     def split_data(
         self, 
         df: pd.DataFrame, 
@@ -50,7 +49,12 @@ class RegressorSuite:
         random_state: int = 42
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         """
-        Split data into features (X) and target (y), then train/test sets.
+        Split data into features (X) and target (y), ensuring no data leakage.
+
+        This method explicitly removes direct mathematical predictors (Quantity, Price)
+        that would cause artificial model performance (Data Leakage). This forces the
+        model to learn behavioral patterns (Time, Location, Item Type) instead of 
+        memorizing the formula (Total = Price * Qty).
         
         Args:
             df (pd.DataFrame): Complete feature-engineered dataframe.
@@ -77,9 +81,16 @@ class RegressorSuite:
             raise ValueError(f"test_size must be between 0 and 1, got {test_size}")
         
         self.logger.info(f"Defining target variable: {target}")
-        self.logger.info(f"Defining features (X): All columns except {target}")
         
-        X = df.drop(columns=[target])
+        # Identify columns that cause data leakage
+        leakage_cols = ['Quantity', 'Price Per Unit']
+        
+        # Filter to drop only columns that actually exist in the dataframe
+        cols_to_drop = [target] + [col for col in leakage_cols if col in df.columns]
+        
+        self.logger.info(f"Defining features (X). Removing leakage columns: {cols_to_drop}")
+        
+        X = df.drop(columns=cols_to_drop)
         y = df[target]
         
         self.logger.info(
@@ -98,7 +109,7 @@ class RegressorSuite:
         )
         
         return X_train, X_test, y_train, y_test
-    
+        
     def train_models(
         self, 
         X_train: pd.DataFrame, 
